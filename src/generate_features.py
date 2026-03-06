@@ -20,7 +20,7 @@ for sample_id, group in grouped:
 
     fault_type = group["fault_type"].iloc[0]
 
-    # -------- Vibration Features --------
+    #Vibration Features 
 
     vibration_rms = np.sqrt(np.mean(vibration**2))
 
@@ -34,7 +34,7 @@ for sample_id, group in grouped:
 
     dominant_frequency = freqs[np.argmax(vibration_fft)]
 
-    # -------- Current Features --------
+    # Current Features 
 
     current_rms = np.sqrt(np.mean(current**2))
 
@@ -44,7 +44,7 @@ for sample_id, group in grouped:
 
     current_spectral_energy = np.sum(current_fft**2)
 
-    # -------- RPM Feature --------
+    # RPM Feature 
 
     rpm_std = np.std(rpm)
 
