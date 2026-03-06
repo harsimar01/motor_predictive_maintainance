@@ -24,7 +24,7 @@ for sample_id in range(samples):
     # Temperature time series
     temperature = 60 + np.random.normal(0,2,signal_length)
 
-    # ---------- Fault Injection ----------
+    #  Fault Injection 
 
     if r < 0.08:
         fault_type = "imbalance"
@@ -61,7 +61,7 @@ for sample_id in range(samples):
 
         temperature += np.random.uniform(10,20)
 
-    # ---------- Save Each Time Step ----------
+    # Save Each Time Step 
 
     for i in range(signal_length):
 
