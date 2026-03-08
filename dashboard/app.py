@@ -190,6 +190,8 @@ FEATURE_COLUMNS = [
 #  LAYOUT PLACEHOLDERS
 
 col1, col2 = st.columns(2)
+col1.subheader("📳 Vibration Signal")
+col2.subheader("🌡️ Temperature Signal")
 vibration_chart = col1.empty()
 temp_chart      = col2.empty()
 
@@ -222,14 +224,74 @@ while True:
     st.session_state.vibration_data   = st.session_state.vibration_data[-WINDOW:]
     st.session_state.temperature_data = st.session_state.temperature_data[-WINDOW:]
 
-    vibration_chart.line_chart(
-        pd.DataFrame(st.session_state.vibration_data, columns=["vibration"]),
-        width="stretch"
+    # Build time axis for the rolling window: each sample = 1ms (1kHz sampling)
+    n_samples  = len(st.session_state.vibration_data)
+    time_axis  = np.round(np.arange(n_samples) * (1 / 1000), 4)  # 0 → 0.511 s
+
+    DARK_BG   = "#0e1117"   # matches Streamlit dark background
+    PANEL_BG  = "#1a1f2e"   # slightly lighter for the plot area
+    GRID_COL  = "#2d3347"   # subtle grid lines
+    TEXT_COL  = "#e0e0e0"   # light grey — readable on dark
+
+    vib_fig = go.Figure()
+    vib_fig.add_trace(go.Scatter(
+        x=time_axis,
+        y=st.session_state.vibration_data,
+        mode="lines",
+        line=dict(color="#4da6ff", width=1.2),
+        name="Vibration",
+        fill="tozeroy",
+        fillcolor="rgba(77,166,255,0.08)"
+    ))
+    vib_fig.update_layout(
+        title=dict(text="Vibration Amplitude over Time", font=dict(size=14, color=TEXT_COL)),
+        xaxis=dict(
+            title=dict(text="Time (seconds)", font=dict(color=TEXT_COL)),
+            tickformat=".2f", tickfont=dict(color=TEXT_COL),
+            showgrid=True, gridcolor=GRID_COL, zeroline=False,
+        ),
+        yaxis=dict(
+            title=dict(text="Amplitude (m/s²)", font=dict(color=TEXT_COL)),
+            tickfont=dict(color=TEXT_COL),
+            showgrid=True, gridcolor=GRID_COL, zeroline=False,
+        ),
+        margin=dict(t=50, b=50, l=60, r=20),
+        height=280,
+        plot_bgcolor=PANEL_BG,
+        paper_bgcolor=DARK_BG,
+        legend=dict(font=dict(color=TEXT_COL)),
     )
-    temp_chart.line_chart(
-        pd.DataFrame(st.session_state.temperature_data, columns=["temperature"]),
-        width="stretch"
+    vibration_chart.plotly_chart(vib_fig, width="stretch", key=f"vib_chart_{n}")
+
+    temp_fig = go.Figure()
+    temp_fig.add_trace(go.Scatter(
+        x=time_axis,
+        y=st.session_state.temperature_data,
+        mode="lines",
+        line=dict(color="#ff6b6b", width=1.2),
+        name="Temperature",
+        fill="tozeroy",
+        fillcolor="rgba(255,107,107,0.08)"
+    ))
+    temp_fig.update_layout(
+        title=dict(text="Motor Surface Temperature over Time", font=dict(size=14, color=TEXT_COL)),
+        xaxis=dict(
+            title=dict(text="Time (seconds)", font=dict(color=TEXT_COL)),
+            tickformat=".2f", tickfont=dict(color=TEXT_COL),
+            showgrid=True, gridcolor=GRID_COL, zeroline=False,
+        ),
+        yaxis=dict(
+            title=dict(text="Temperature (°C)", font=dict(color=TEXT_COL)),
+            tickfont=dict(color=TEXT_COL),
+            showgrid=True, gridcolor=GRID_COL, zeroline=False,
+        ),
+        margin=dict(t=50, b=50, l=60, r=20),
+        height=280,
+        plot_bgcolor=PANEL_BG,
+        paper_bgcolor=DARK_BG,
+        legend=dict(font=dict(color=TEXT_COL)),
     )
+    temp_chart.plotly_chart(temp_fig, width="stretch", key=f"temp_chart_{n}")
 
     # Model inference
     features      = extract_features(vibration, current, rpm, temperature)
@@ -239,9 +301,9 @@ while True:
     labels        = encoder.classes_
     fault         = encoder.inverse_transform(prediction)[0]
 
-    # Health Score 
-    # Health = probability the motor is NORMAL
    
+    # Health = probability the motor is NORMAL
+    
     normal_index = list(labels).index("normal")
     health_score = probabilities[normal_index] * 100
 
@@ -277,7 +339,7 @@ while True:
     fig.update_layout(margin=dict(t=60, b=0))
     health_placeholder.plotly_chart(fig, width="stretch", key=f"health_gauge_{n}")
 
-    # Consecutive Fault Counter & Email Alert ───────────────
+    #Consecutive Fault Counter & Email Alert 
     if fault != "normal":
         st.session_state.consecutive_faults += 1
     else:
